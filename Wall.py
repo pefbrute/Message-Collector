@@ -12,14 +12,14 @@ class MessageBatchProcessor:
         self.batch_size = batch_size
         self.batch_interval = batch_interval
 
-    async def process_batch(self, client, chat_dict, exchange_keywords_re, channel_name):
+    async def process_batch(self, client, chat_dict, keywords_re, channel_name):
         while True:
             current_time = datetime.now()
             if len(self.message_batch) >= self.batch_size or any(
                 (current_time - event['timestamp']).seconds > 5 for event in self.message_batch):
                 logging.info("Processing batch...")
                 for event in self.message_batch:
-                    if exchange_keywords_re.search(event['message'].raw_text):
+                    if keywords_re.search(event['message'].raw_text):
                         try:
                             await event['message'].forward_to(channel_name)
                             channel_id = event['message'].message.peer_id.channel_id
@@ -32,11 +32,12 @@ class MessageBatchProcessor:
             await asyncio.sleep(self.batch_interval)
 
 # Your existing code for initialization
-api_id = ID
-api_hash = HASH
-channel_name = CHANNEL_NAME
-exchange_keywords = ["менять", "меняю", "меняет", "менял", "меняйте", "обмен", "крипту", "крипта", "курс", "рупии", "руппи", "экскурсия", "экскурсии", "трансфер", "трансфером"]
-exchange_keywords_re = re.compile(r'\b(?:{})\b'.format("|".join(re.escape(word) for word in exchange_keywords)), re.IGNORECASE)
+api_id = ID (You can take it from - https://my.telegram.org/auth)
+api_hash = HASH (It from here too - https://my.telegram.org/auth)
+channel_name = CHANNEL_NAME (Where to send messages)
+
+keywords = ["менять", "меняю", "меняет", "менял", "меняйте", "обмен", "крипту", "крипта", "курс", "рупии", "руппи", "экскурсия", "экскурсии", "трансфер", "трансфером"]
+keywords_re = re.compile(r'\b(?:{})\b'.format("|".join(re.escape(word) for word in keywords)), re.IGNORECASE)
 
 chat_dict = {
     1720352497: "https://t.me/testing_group_roup",
@@ -67,7 +68,7 @@ async def main(event):
     batch_processor.message_batch.append(timestamped_event)
 
 # Schedule the batch processing
-client.loop.create_task(batch_processor.process_batch(client, chat_dict, exchange_keywords_re, channel_name))
+client.loop.create_task(batch_processor.process_batch(client, chat_dict, keywords_re, channel_name))
 
 client.start()
 
